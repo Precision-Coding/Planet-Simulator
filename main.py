@@ -1,6 +1,7 @@
 # main
 import pygame
 from sys import exit
+import math
 
 windowWidth, windowHeight = 1400, 700 # Size of actual window
 resolution = 1
@@ -18,6 +19,14 @@ pygame.display.set_caption("Planet-Simulator")
 pygame.font.init()
 baseFont = pygame.font.SysFont("helvetica", 20 * resolution)
 
+def planetCreate(radius, resolution):
+    radius = radius * resolution
+    planet = pygame.surface.Surface((radius * 4, radius * 4))
+    pygame.draw.circle(planet, "darkblue", (radius * 2, radius * 2), radius,)
+
+    return planet
+
+
 # Event Loop
 while True:
     # Game ender
@@ -27,14 +36,14 @@ while True:
             exit()
 
         if event.type == pygame.MOUSEWHEEL:
-            resolution = resolution + event.y / 25
+            resolution = resolution + event.y * resolution / 10
 
-    #PLANET
-    radius = 150 * resolution
-    planet = pygame.surface.Surface((1400, 700))
-    pygame.draw.circle(planet, "red", (700,350), radius,)
+    # Surface Updates
+    planet = planetCreate(150, resolution)
 
-    screen.blit(planet, (0,0))
+
+    screen.blit(planet, planet.get_rect(center = (700, 350)))
+
     # Updates and tickrate
     pygame.display.update()
     clock.tick(frameRate)
