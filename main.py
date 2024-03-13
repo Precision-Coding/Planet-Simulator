@@ -1,49 +1,82 @@
-# main
-import pygame
+import asyncio
 from sys import exit
-import math
+from math import inf
+from pygame.display import set_mode, flip
+from pygame.constants import SCALED
+from pygame.event import get
+import pygame
+import time
+import pygame
 
-windowWidth, windowHeight = 1400, 700 # Size of actual window
-resolution = 1
 
-# Framerate
-frameRate = 60
-clock = pygame.time.Clock() # I honestly don't know what this
+# Define planet class
+class Planet:
+    def __init__(self, radius, resolution):
+        self.radius = radius
+        self.resolution = resolution
+        self.surface = pygame.Surface((radius * 4, radius * 4))
+        self.draw_circle()
 
-# Screen Setup
+    def draw_circle(self):
+        scaled_radius = int(self.radius * self.resolution)
+        pygame.draw.circle(self.surface, "darkblue", (scaled_radius * 2, scaled_radius * 2), scaled_radius)
+
+    def draw(self, screen_surface):
+        screen_surface.blit(self.surface, self.surface.get_rect(center=(700, 350)))
+
+    def update(self):
+        self.surface.fill((0, 0, 0))  # Clear the surface
+        self.draw_circle()  # Redraw the circle with updated size
+
+
+# Define event handler class
+class EventHandler:
+    def __init__(self):
+        self.should_exit = False
+        self.resolution = 1
+
+    async def handle_events(self, events_to_handle):
+        # Handle events
+        for event in events_to_handle:
+            if event.type == pygame.QUIT:
+                self.should_exit = True
+            elif event.type == pygame.MOUSEWHEEL:
+                self.resolution += event.y * 0.1  # Adjust the resolution based on the mouse wheel movement
+
+
+# Initialize pygame
 pygame.init()
-screen = pygame.display.set_mode((windowWidth, windowHeight))
-pygame.display.set_caption("Planet-Simulator")
+pygame.display.set_caption("Solar System Simulation")
 
-# Font
-pygame.font.init()
-baseFont = pygame.font.SysFont("helvetica", 20 * resolution)
+# Create instances
+event_handler = EventHandler()
+planet = Planet(150, event_handler.resolution)
+drawables = [planet]
 
-def planetCreate(radius, resolution):
-    radius = radius * resolution
-    planet = pygame.surface.Surface((radius * 4, radius * 4))
-    pygame.draw.circle(planet, "darkblue", (radius * 2, radius * 2), radius,)
+async def pygame_loop(framerate_limit=inf):
+    loop = asyncio.get_event_loop()
+    screen_surface = set_mode((1400, 700), flags=SCALED, vsync=1)
+    next_frame_target = 0.0
+    limit_frame_duration = 1.0 / framerate_limit
 
-    return planet
+    while not event_handler.should_exit:
+        if limit_frame_duration:
+            # framerate limiter
+            this_frame = time.time()
+            delay = next_frame_target - this_frame
+            if delay > 0:
+                await asyncio.sleep(delay)
+            next_frame_target = this_frame + limit_frame_duration
 
+        for drawable in drawables:
+            drawable.draw(screen_surface)
+            drawable.update()
 
-# Event Loop
-while True:
-    # Game ender
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
+        events_to_handle = list(get())
+        await event_handler.handle_events(events_to_handle)
 
-        if event.type == pygame.MOUSEWHEEL:
-            resolution = resolution + event.y * resolution / 10
+        await loop.run_in_executor(None, flip)
+        pygame.display.update()
+    exit()
 
-    # Surface Updates
-    planet = planetCreate(150, resolution)
-
-
-    screen.blit(planet, planet.get_rect(center = (700, 350)))
-
-    # Updates and tickrate
-    pygame.display.update()
-    clock.tick(frameRate)
+asyncio.run(pygame_loop(60))
