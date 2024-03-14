@@ -24,13 +24,15 @@ def cometCreate(radius, resolution, distance, size):
     return comet, comet_pos
 
 def scaleCreate(resolution, window_width, font):
-    scale_bar = pygame.surface.Surface((window_width, 50))
-    scale_bar.fill((25, 25, 25))
-    for distance in range(1, 12):
-        pixel_space = window_width / 11
-        pygame.draw.line(scale_bar, "white", (distance * pixel_space, 0), (distance * pixel_space, 50))
+    bar_length = window_width / 10
+    scale_bar = pygame.surface.Surface((window_width, window_height / 30 + 25))
+    pygame.draw.line(scale_bar, "white", (0, window_height / 30), (bar_length, window_height / 30))
 
-    text = font.render(f"{distance * pixel_space * resolution / 1000} Km", True, "white")
+    text = font.render(str(f"{math.floor(math.floor(bar_length * resolution / 1000))} Km"), True, "white")
+    text_rect = text.get_rect(topleft = (0, window_height / 30))
+
+    scale_bar.blit(text, text_rect)
+
     return scale_bar
 
 window_width, window_height = 1400, 700 # Size of actual window
@@ -47,7 +49,7 @@ pygame.display.set_caption("Planet-Simulator")
 
 # Font
 pygame.font.init()
-base_font = pygame.font.SysFont("helvetica", 20 * resolution)
+base_font = pygame.font.SysFont("helvetica", 20)
 
 # Event Loop
 while True:
@@ -67,6 +69,7 @@ while True:
     #Blits
     screen.blit(planet, planet_pos)
     screen.blit(scale_bar, (0, 0))
+
     # Updates and tickrate
     pygame.display.update()
     clock.tick(frame_rate)
